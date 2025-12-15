@@ -281,6 +281,60 @@
             </div>
         </section>
 
+        <!-- Section Code Snippets (Restaurée) -->
+        <section id="code" class="grid lg:grid-cols-2 gap-8">
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 text-slate-300 mb-2">
+                    <i class="fa-brands fa-python"></i>
+                    <h3 class="font-bold">Calcul d'Équité (Monte Carlo)</h3>
+                </div>
+                <div class="code-block text-xs h-full">
+                    <div class="text-slate-500 text-[10px] uppercase font-bold mb-2">Extrait: poker_engine.py</div>
+<pre><span class="py-keyword">def</span> <span class="py-func">equity</span>(hand, board, nb_simulation):
+    <span class="py-comment"># Convertit les cartes en entiers optimisés</span>
+    hand_int = [DECK_INT[c] <span class="py-keyword">for</span> c <span class="py-keyword">in</span> hand]
+    board_int = [DECK_INT[c] <span class="py-keyword">for</span> c <span class="py-keyword">in</span> board]
+    
+    <span class="py-comment"># Simulation de N parties</span>
+    <span class="py-keyword">for</span> _ <span class="py-keyword">in</span> <span class="py-func">range</span>(nb_simulation):
+        <span class="py-comment"># Tirage aléatoire des cartes manquantes</span>
+        draw = random.<span class="py-func">sample</span>(deck_int, cards_to_draw)
+        
+        <span class="py-comment"># Évaluation des mains</span>
+        my_score = <span class="py-func">evaluate7</span>(hand_int + current_board)
+        opp_score = <span class="py-func">evaluate7</span>(opp_hand + current_board)
+        
+        <span class="py-keyword">if</span> my_score < opp_score:
+            wins += <span class="py-num">1</span>
+            
+    <span class="py-keyword">return</span> wins / nb_simulation</pre>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 text-slate-300 mb-2">
+                    <i class="fa-solid fa-terminal"></i>
+                    <h3 class="font-bold">Interface Console (CLI)</h3>
+                </div>
+                <div class="bg-slate-900 rounded-lg border border-slate-700 p-4 font-mono text-xs text-slate-300 h-full flex flex-col justify-center shadow-inner">
+                    <div class="mb-2"><span class="text-green-400">user@portfolio:~$</span> python3 main.py</div>
+                    <div class="pl-2 border-l-2 border-slate-700 space-y-1">
+                        <div>--- Calculateur d'Équité Poker ---</div>
+                        <div>Entrez votre première carte : <span class="text-white font-bold">As</span></div>
+                        <div>Entrez votre deuxième carte : <span class="text-white font-bold">Kd</span></div>
+                        <div><span class="text-blue-400">Calcul de l'équité pré-flop...</span></div>
+                        <div>Votre équité avec le board ['As', 'Kd'] est de <span class="text-yellow-400 font-bold">48%</span></div>
+                        <div>--- FLOP ---</div>
+                        <div>Entrez la première carte du flop : <span class="text-white font-bold">Jd</span></div>
+                        <div>Entrez la deuxième carte du flop : <span class="text-white font-bold">8h</span></div>
+                        <div>Entrez la troisième carte flop : <span class="text-white font-bold">9c</span></div>
+                        <div><span class="text-blue-400">Calcul de l'équité post-flop...</span></div>
+                        <div>Votre équité avec le board ['Jd', '8h', '9c'] est de <span class="text-yellow-400 font-bold">28,14%</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- JAVASCRIPT LOGIC -->
@@ -293,6 +347,20 @@
             { char: '♣', color: 'suit-black', code: 'c' }
         ];
 
+        // --- NOUVELLE FONCTION POUR ÉVITER LES DOUBLONS ---
+        function getUsedCards() {
+            // Récupère toutes les valeurs data-val actuellement sur le board
+            const ids = ['card-h1', 'card-h2', 'card-b1', 'card-b2', 'card-b3', 'card-b4', 'card-b5'];
+            const used = new Set();
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.dataset.val) {
+                    used.add(el.dataset.val);
+                }
+            });
+            return used;
+        }
+
         // Change la carte visuellement et met à jour l'attribut data-val
         function selectCard(id) {
             const el = document.getElementById(id);
@@ -301,9 +369,24 @@
                 return;
             }
 
-            const r = ranks[Math.floor(Math.random() * ranks.length)];
-            const s = suits[Math.floor(Math.random() * suits.length)];
+            const used = getUsedCards();
+            // On retire la carte actuelle des "used" car on va la changer, 
+            // donc on a le droit de retomber dessus théoriquement (bien que peu probable/souhaitable, mais safe)
+            if (el.dataset.val) used.delete(el.dataset.val);
+
+            let r, s, candidate;
+            let attempts = 0;
             
+            // Boucle tant qu'on génère une carte déjà présente
+            do {
+                r = ranks[Math.floor(Math.random() * ranks.length)];
+                s = suits[Math.floor(Math.random() * suits.length)];
+                candidate = r + s.code;
+                attempts++;
+                // Sécurité boucle infinie (si deck presque vide ou bug)
+                if (attempts > 100) break;
+            } while (used.has(candidate));
+
             // UI Update
             el.className = 'poker-card'; 
             el.innerHTML = `
@@ -312,7 +395,7 @@
             `;
             
             // Stocke la valeur pour Python (ex: "Ah", "Ks")
-            el.dataset.val = r + s.code;
+            el.dataset.val = candidate;
             
             const resultArea = document.getElementById('result-area');
             if (resultArea) resultArea.classList.add('hidden');
