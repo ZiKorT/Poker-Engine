@@ -111,8 +111,8 @@
                 if len(hand) != 2:
                     return "Erreur: 2 cartes requises"
 
-                # Appel du vrai moteur (Réduit simu à 1000 pour la vitesse web)
-                equity_val = poker_engine.equity(hand, board, 1000)
+                # Appel du vrai moteur
+                equity_val = poker_engine.equity(hand, board, 10000)
                 
                 # Retour formaté (ex: 42.5)
                 return round(equity_val * 100, 2)
@@ -323,7 +323,7 @@
                         <div>Entrez votre première carte : <span class="text-white font-bold">As</span></div>
                         <div>Entrez votre deuxième carte : <span class="text-white font-bold">Kd</span></div>
                         <div><span class="text-blue-400">Calcul de l'équité pré-flop...</span></div>
-                        <div>Votre équité avec le board ['As', 'Kd'] est de <span class="text-yellow-400 font-bold">48%</span></div>
+                        <div>Votre équité avec la main ['As', 'Kd'] est de <span class="text-yellow-400 font-bold">48%</span></div>
                         <div>--- FLOP ---</div>
                         <div>Entrez la première carte du flop : <span class="text-white font-bold">Jd</span></div>
                         <div>Entrez la deuxième carte du flop : <span class="text-white font-bold">8h</span></div>
