@@ -112,7 +112,7 @@
                     return "Erreur: 2 cartes requises"
 
                 # Appel du vrai moteur
-                equity_val = poker_engine.equity(hand, board, 10000)
+                equity_val = poker_engine.equity(hand, board, 100000)
                 
                 # Retour formaté (ex: 42.5)
                 return round(equity_val * 100, 2)
