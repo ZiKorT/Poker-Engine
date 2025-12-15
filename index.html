@@ -28,7 +28,14 @@
             border-radius: 0.5rem;
             border: 1px solid #1e293b;
             overflow-x: auto;
+            font-size: 0.8rem;
         }
+        
+        .py-keyword { color: #c678dd; }
+        .py-func { color: #61afef; }
+        .py-string { color: #98c379; }
+        .py-comment { color: #5c6370; font-style: italic; }
+        .py-num { color: #d19a66; }
 
         .poker-card {
             width: 60px; height: 84px;
@@ -73,9 +80,12 @@
         import asyncio
 
         # Initialisation : Charge le CSV au démarrage
-        print("Chargement des tables de lookup...")
-        poker_engine.generate_lookup()
-        print("Moteur Poker prêt.")
+        try:
+            print("Chargement des tables de lookup...")
+            poker_engine.generate_lookup()
+            print("Moteur Poker prêt.")
+        except Exception as e:
+            print(f"Erreur init Python: {e}")
 
         # Cache le loader quand c'est prêt
         loader = js.document.getElementById("pyscript_loading")
@@ -162,10 +172,10 @@
                 <div class="z-10 mb-8 text-center">
                     <h3 class="text-green-100/50 text-xs font-bold uppercase tracking-widest mb-3">Votre Main</h3>
                     <div class="flex gap-4 justify-center">
-                        <div class="poker-card" id="card-h1" onclick="selectCard('h1')" data-val="Ah">
+                        <div class="poker-card" id="card-h1" onclick="selectCard('card-h1')" data-val="Ah">
                             <div class="text-lg suit-red">A♥</div><div class="self-end text-lg suit-red">♥</div>
                         </div>
-                        <div class="poker-card" id="card-h2" onclick="selectCard('h2')" data-val="Ks">
+                        <div class="poker-card" id="card-h2" onclick="selectCard('card-h2')" data-val="Ks">
                             <div class="text-lg suit-black">K♠</div><div class="self-end text-lg suit-black">♠</div>
                         </div>
                     </div>
@@ -175,19 +185,19 @@
                 <div class="z-10 mb-10 text-center">
                     <h3 class="text-green-100/50 text-xs font-bold uppercase tracking-widest mb-3">Le Board (Flop / Turn / River)</h3>
                     <div class="flex gap-3 justify-center flex-wrap">
-                        <div class="poker-card" id="card-b1" onclick="selectCard('b1')" data-val="Jd">
+                        <div class="poker-card" id="card-b1" onclick="selectCard('card-b1')" data-val="Jd">
                             <div class="text-lg suit-red">J♦</div><div class="self-end text-lg suit-red">♦</div>
                         </div>
-                        <div class="poker-card" id="card-b2" onclick="selectCard('b2')" data-val="Tc">
+                        <div class="poker-card" id="card-b2" onclick="selectCard('card-b2')" data-val="Tc">
                             <div class="text-lg suit-black">10♣</div><div class="self-end text-lg suit-black">♣</div>
                         </div>
-                        <div class="poker-card" id="card-b3" onclick="selectCard('b3')" data-val="Th">
+                        <div class="poker-card" id="card-b3" onclick="selectCard('card-b3')" data-val="Th">
                             <div class="text-lg suit-red">10♥</div><div class="self-end text-lg suit-red">♥</div>
                         </div>
-                        <div class="poker-card empty" id="card-b4" onclick="selectCard('b4')" data-val="">
+                        <div class="poker-card empty" id="card-b4" onclick="selectCard('card-b4')" data-val="">
                             <span>Turn</span>
                         </div>
-                        <div class="poker-card empty" id="card-b5" onclick="selectCard('b5')" data-val="">
+                        <div class="poker-card empty" id="card-b5" onclick="selectCard('card-b5')" data-val="">
                             <span>River</span>
                         </div>
                     </div>
@@ -208,19 +218,66 @@
             </div>
         </section>
 
-        <!-- Architecture Info -->
-        <section id="algo" class="grid md:grid-cols-3 gap-6">
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="text-white font-bold mb-2">Bitmasking</h3>
-                <p class="text-sm text-slate-400">Représentation binaire des cartes pour une évaluation en O(1).</p>
+        <!-- Section Architecture (Restaurée) -->
+        <section id="algo" class="space-y-12">
+            <div class="text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold text-white mb-4">Architecture & Optimisation</h2>
+                <div class="h-1 w-20 bg-red-500 mx-auto rounded mb-6"></div>
+                <p class="text-slate-400">
+                    L'évaluation d'une main de poker à 7 cartes est complexe (133 millions de combinaisons). 
+                    Pour atteindre une vitesse de calcul temps-réel, ce projet utilise plusieurs techniques d'ingénierie logicielle.
+                </p>
             </div>
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="text-white font-bold mb-2">Primes Product</h3>
-                <p class="text-sm text-slate-400">Multiplication de nombres premiers pour identifier les mains uniques.</p>
-            </div>
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="text-white font-bold mb-2">Lookup Tables</h3>
-                <p class="text-sm text-slate-400">Le fichier <code>Flushes.csv</code> est chargé dynamiquement pour pré-calculer les forces.</p>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Card 1: Bitmasking -->
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-500/50 transition-colors">
+                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-red-500 text-xl font-mono border border-slate-700">
+                        0b101
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Représentation Binaire</h3>
+                    <p class="text-slate-400 text-sm mb-4">
+                        Chaque carte est un entier de 32 bits. Cela permet d'extraire la couleur, la valeur et le nombre premier associé en une seule opération bit-à-bit (`&`, `|`, `>>`).
+                    </p>
+                    <div class="code-block text-[10px]">
+                        <span class="py-comment"># Format binaire d'une carte</span><br>
+                        rank_mask = (<span class="py-num">1</span> &lt;&lt; i) &lt;&lt; <span class="py-num">16</span><br>
+                        suit_val = (<span class="py-num">1</span> &lt;&lt; j) &lt;&lt; <span class="py-num">12</span><br>
+                        card_int = prime | rank | suit
+                    </div>
+                </div>
+
+                <!-- Card 2: Prime Numbers -->
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-yellow-500/50 transition-colors">
+                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-yellow-500 text-xl border border-slate-700">
+                        <i class="fa-solid fa-superscript"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Produit de Nombres Premiers</h3>
+                    <p class="text-slate-400 text-sm mb-4">
+                        Chaque rang (2, 3... As) est associé à un nombre premier. En multipliant les premiers des cartes d'une main, on obtient un produit unique qui identifie la main sans tenir compte de l'ordre.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-1 list-disc list-inside">
+                        <li>2 = 2, 3 = 3 ... As = 41</li>
+                        <li>Multiplication indépendante de l'ordre</li>
+                        <li>Identification unique des mains non-flush</li>
+                    </ul>
+                </div>
+
+                <!-- Card 3: Lookup Tables -->
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500/50 transition-colors">
+                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-blue-500 text-xl border border-slate-700">
+                        <i class="fa-solid fa-table"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Table de Lookup (CSV)</h3>
+                    <p class="text-slate-400 text-sm mb-4">
+                        Plutôt que de recalculer la force de chaque main à chaque fois, le programme pré-charge un fichier <code>Flushes.csv</code> contenant toutes les combinaisons uniques.
+                    </p>
+                    <div class="code-block text-[10px]">
+                        <span class="py-comment"># O(1) Access Time</span><br>
+                        score = Flushes[<span class="py-string">"2567"</span>] <span class="py-comment"># Exemple</span><br>
+                        <span class="py-keyword">if</span> score < best_score: ...
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -239,6 +296,11 @@
         // Change la carte visuellement et met à jour l'attribut data-val
         function selectCard(id) {
             const el = document.getElementById(id);
+            if (!el) {
+                console.error("Élément introuvable : " + id);
+                return;
+            }
+
             const r = ranks[Math.floor(Math.random() * ranks.length)];
             const s = suits[Math.floor(Math.random() * suits.length)];
             
@@ -252,7 +314,8 @@
             // Stocke la valeur pour Python (ex: "Ah", "Ks")
             el.dataset.val = r + s.code;
             
-            document.getElementById('result-area').classList.add('hidden');
+            const resultArea = document.getElementById('result-area');
+            if (resultArea) resultArea.classList.add('hidden');
         }
 
         async function runRealSimulation() {
@@ -267,15 +330,21 @@
             }
 
             // Récupération des cartes depuis le DOM
-            const h1 = document.getElementById('card-h1').dataset.val;
-            const h2 = document.getElementById('card-h2').dataset.val;
+            const h1El = document.getElementById('card-h1');
+            const h2El = document.getElementById('card-h2');
+            
+            const h1 = h1El ? h1El.dataset.val : "";
+            const h2 = h2El ? h2El.dataset.val : "";
             
             // Board cards (seulement celles qui ne sont pas vides)
             const boardIds = ['card-b1', 'card-b2', 'card-b3', 'card-b4', 'card-b5'];
             let boardCards = [];
             boardIds.forEach(id => {
-                const val = document.getElementById(id).dataset.val;
-                if(val) boardCards.push(val);
+                const el = document.getElementById(id);
+                if (el) {
+                    const val = el.dataset.val;
+                    if(val) boardCards.push(val);
+                }
             });
 
             // UI Loading
