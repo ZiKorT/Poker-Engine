@@ -10,6 +10,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
         
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 100px; 
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0f172a; /* Slate 900 */
@@ -60,21 +65,6 @@
 
         .suit-red { color: #dc2626; }
         .suit-black { color: #1e293b; }
-
-        /* Animation Loader */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            100% { transform: scale(1.2); opacity: 0; }
-        }
-        .calculating-ring::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid #ef4444;
-            animation: pulse-ring 1.5s infinite;
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -87,7 +77,7 @@
                 <h1 class="text-xl font-bold tracking-tight">Poker<span class="text-slate-400 font-normal">Engine</span></h1>
             </div>
             <nav class="hidden md:flex gap-6 text-sm font-medium">
-                <a href="#demo" class="hover:text-red-400 transition-colors">Démonstration</a>
+                <a href="#demo" class="hover:text-red-400 transition-colors">Interface</a>
                 <a href="#algo" class="hover:text-red-400 transition-colors">Algorithme</a>
                 <a href="#code" class="hover:text-red-400 transition-colors">Code Source</a>
             </nav>
@@ -97,7 +87,7 @@
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 py-8 space-y-16">
+    <main class="flex-grow container mx-auto px-4 py-8 space-y-20">
 
         <!-- Hero Section -->
         <section class="text-center max-w-3xl mx-auto pt-8">
@@ -110,12 +100,20 @@
             </h2>
             <p class="text-lg text-slate-400 mb-8">
                 Un moteur d'évaluation de mains ultra-rapide écrit en Python. 
-                Utilise des opérations binaires (Bitmasks) et des nombres premiers pour calculer vos chances de victoire en temps réel.
+                Utilise des opérations binaires (Bitmasks) et des nombres premiers pour calculer vos chances de victoire.
             </p>
         </section>
 
         <!-- Interactive Demo (Visual Mockup) -->
-        <section id="demo" class="bg-slate-800 rounded-2xl border border-slate-700 p-1 shadow-2xl overflow-hidden">
+        <section id="demo" class="bg-slate-800 rounded-2xl border border-slate-700 p-1 shadow-2xl overflow-hidden relative">
+            
+            <!-- Badge "Mockup" pour être honnête -->
+            <div class="absolute top-4 right-4 z-20">
+                <span class="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase rounded-full backdrop-blur">
+                    Interface Demo
+                </span>
+            </div>
+
             <div class="bg-[#1a3c28] rounded-xl p-8 relative min-h-[400px] flex flex-col items-center justify-center border border-[#2d5a3f]">
                 <!-- Tapis Vert Texture -->
                 <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
@@ -162,21 +160,25 @@
 
                 <!-- Action Bar -->
                 <div class="z-10 flex flex-col items-center gap-4">
-                    <button onclick="simulateCalculation()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-red-900/50 transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-calculator"></i> Calculer l'Équité
+                    <button onclick="simulateCalculation()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-medium py-2 px-6 rounded-full shadow-lg transition-all flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-play"></i> Simuler l'interface
                     </button>
                     
                     <div id="result-area" class="hidden text-center">
-                        <div class="text-sm text-green-200 mb-1">Win Rate Estimé (3 Joueurs)</div>
-                        <div class="text-4xl font-black text-white drop-shadow-lg" id="equity-val">42.5%</div>
-                        <div class="text-xs text-green-400 mt-2 font-mono"><i class="fa-solid fa-bolt"></i> 10,000 simulations en 0.04s</div>
+                        <div class="text-xs text-yellow-400/80 mb-1 uppercase tracking-wide font-bold">Résultat Simulé</div>
+                        <div class="text-4xl font-black text-white drop-shadow-lg" id="equity-val">67.0</div>
+                        <div class="text-[10px] text-slate-400 mt-2 font-mono">Backend Python non connecté (Page Statique)</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Note explicative -->
-            <div class="bg-slate-900/80 px-6 py-3 text-xs text-slate-500 text-center border-t border-slate-700">
-                * Interface web de démonstration visuelle. Le véritable moteur Python utilise <code>Flushes.csv</code> (1MB) pour les lookups.
+            <!-- Note explicative HONNÊTE -->
+            <div class="bg-slate-900/90 px-6 py-4 text-xs text-slate-400 text-center border-t border-slate-700 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-info-circle text-blue-400 text-lg"></i>
+                <p class="text-left">
+                    Cette section est une <strong>démonstration UX/UI</strong>. Le véritable moteur de calcul (Backend Python) nécessite un serveur pour traiter les millions de combinaisons (fichier CSV de 1Mo). 
+                    Le code source ci-dessous montre la logique réelle. <strong>Les résultats affichés ne seront pas corrects</strong>
+                </p>
             </div>
         </section>
 
@@ -184,6 +186,7 @@
         <section id="algo" class="space-y-12">
             <div class="text-center max-w-2xl mx-auto">
                 <h2 class="text-3xl font-bold text-white mb-4">Architecture & Optimisation</h2>
+                <div class="h-1 w-20 bg-red-500 mx-auto rounded mb-6"></div>
                 <p class="text-slate-400">
                     L'évaluation d'une main de poker à 7 cartes est complexe (133 millions de combinaisons). 
                     Pour atteindre une vitesse de calcul temps-réel, ce projet utilise plusieurs techniques d'ingénierie logicielle.
@@ -277,18 +280,20 @@
                     <i class="fa-solid fa-terminal"></i>
                     <h3 class="font-bold">Interface Console (CLI)</h3>
                 </div>
-                <div class="bg-slate-900 rounded-lg border border-slate-700 p-4 font-mono text-xs text-slate-300 h-full flex flex-col justify-center">
+                <div class="bg-slate-900 rounded-lg border border-slate-700 p-4 font-mono text-xs text-slate-300 h-full flex flex-col justify-center shadow-inner">
                     <div class="mb-2"><span class="text-green-400">user@portfolio:~$</span> python3 main.py</div>
                     <div class="pl-2 border-l-2 border-slate-700 space-y-1">
-                        <div>--- Calculateur d'Équité Spin & Rush ---</div>
-                        <div>Entrez votre première carte : <span class="text-white font-bold">Ah</span></div>
-                        <div>Entrez votre deuxième carte : <span class="text-white font-bold">Ks</span></div>
-                        <div class="text-slate-500">...</div>
+                        <div>--- Calculateur d'Équité Poker ---</div>
+                        <div>Entrez votre première carte : <span class="text-white font-bold">As</span></div>
+                        <div>Entrez votre deuxième carte : <span class="text-white font-bold">Kd</span></div>
+                        <div><span class="text-blue-400">Calcul de l'équité pré-flop...</span></div>
+                        <div>Votre équité avec le board ['As', 'Kd'] est de <span class="text-yellow-400 font-bold">48%</span></div>
                         <div>--- FLOP ---</div>
                         <div>Entrez la première carte du flop : <span class="text-white font-bold">Jd</span></div>
-                        <div class="text-slate-500">...</div>
+                        <div>Entrez la deuxième carte du flop : <span class="text-white font-bold">8h</span></div>
+                        <div>Entrez la troisième carte flop : <span class="text-white font-bold">9c</span></div>
                         <div><span class="text-blue-400">Calcul de l'équité post-flop...</span></div>
-                        <div>Votre équité avec le board ['Jd', 'Tc', 'Th'] est de <span class="text-yellow-400 font-bold">42.50%</span></div>
+                        <div>Votre équité avec le board ['Jd', '8h', '9c'] est de <span class="text-yellow-400 font-bold">28,14%</span></div>
                     </div>
                 </div>
             </div>
@@ -312,21 +317,19 @@
             { char: '♣', color: 'suit-black' }
         ];
 
-        // Fonction Mock-up pour changer une carte au clic (juste pour l'effet visuel)
         function selectCard(id) {
             const el = document.getElementById(`card-${id}`);
             
-            // Génère une carte aléatoire
+            // Génère une carte aléatoire pour la maquette
             const r = ranks[Math.floor(Math.random() * ranks.length)];
             const s = suits[Math.floor(Math.random() * suits.length)];
             
-            el.className = 'poker-card'; // Reset classe empty
+            el.className = 'poker-card'; 
             el.innerHTML = `
                 <div class="text-lg ${s.color}">${r}${s.char}</div>
                 <div class="self-end text-lg ${s.color}">${s.char}</div>
             `;
             
-            // Reset result
             document.getElementById('result-area').classList.add('hidden');
         }
 
@@ -335,21 +338,21 @@
             const resultArea = document.getElementById('result-area');
             const equityVal = document.getElementById('equity-val');
             
-            // Loading state
+            // État de chargement simulé
+            const originalContent = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Simulation...';
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             resultArea.classList.add('hidden');
 
-            // Fake delay
             setTimeout(() => {
-                // Random equity between 20% and 80%
-                const randomEquity = (Math.random() * (80 - 20) + 20).toFixed(2);
+                // Simulation d'un résultat
+                const randomEquity = (Math.random() * (80 - 20) + 20).toFixed(1);
                 
                 equityVal.innerText = randomEquity + '%';
                 resultArea.classList.remove('hidden');
                 
                 // Reset button
-                btn.innerHTML = '<i class="fa-solid fa-calculator"></i> Calculer l\'Équité';
+                btn.innerHTML = originalContent;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }, 800);
         }
