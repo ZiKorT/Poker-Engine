@@ -4,70 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker Engine | Portfolio</title>
-    <meta name="description" content="Calculateur d'équité Poker Texas Hold'em optimisé">
+    <meta name="description" content="Calculateur d'équité Poker Texas Hold'em optimisé via PyScript">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- PyScript : Permet d'exécuter vos fichiers Python .py et lire le .csv -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
         
-        html {
-            scroll-behavior: smooth;
-            scroll-padding-top: 100px; 
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #e2e8f0;
-        }
+        html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
 
         .code-block {
             font-family: 'Fira Code', monospace;
             background: #020617;
             padding: 1rem;
             border-radius: 0.5rem;
-            overflow-x: auto;
             border: 1px solid #1e293b;
+            overflow-x: auto;
         }
 
-        .py-keyword { color: #c678dd; }
-        .py-func { color: #61afef; }
-        .py-string { color: #98c379; }
-        .py-comment { color: #5c6370; font-style: italic; }
-        .py-num { color: #d19a66; }
-
-        /* Effet Carte de Poker */
         .poker-card {
-            width: 60px;
-            height: 84px;
-            background: white;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 4px;
-            font-weight: bold;
-            font-family: 'Inter', sans-serif;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s;
-            cursor: pointer;
-            user-select: none;
+            width: 60px; height: 84px;
+            background: white; border-radius: 6px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 4px; font-weight: bold; cursor: pointer; user-select: none;
+            transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        
         .poker-card:hover { transform: translateY(-4px); }
         .poker-card.empty {
-            background: #1e293b;
-            border: 2px dashed #475569;
-            justify-content: center;
-            align-items: center;
-            color: #475569;
+            background: #1e293b; border: 2px dashed #475569;
+            justify-content: center; align-items: center; color: #475569;
         }
-
         .suit-red { color: #dc2626; }
         .suit-black { color: #1e293b; }
+
+        /* Loader PyScript spécifique */
+        #pyscript_loading {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #1e293b; padding: 10px 20px;
+            border-radius: 8px; border: 1px solid #334155;
+            font-size: 0.8rem; color: #94a3b8; z-index: 100;
+            display: flex; align-items: center; gap: 10px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
+    <!-- Configuration PyScript : Chargement des fichiers locaux -->
+    <py-config>
+        packages = []
+        [[fetch]]
+        from = "./"
+        files = ["poker_engine.py", "Flushes.csv"]
+    </py-config>
+
+    <!-- Script Python Principal (Pont) -->
+    <script type="py">
+        import js
+        from pyscript import window
+        import poker_engine
+        import asyncio
+
+        # Initialisation : Charge le CSV au démarrage
+        print("Chargement des tables de lookup...")
+        poker_engine.generate_lookup()
+        print("Moteur Poker prêt.")
+
+        # Cache le loader quand c'est prêt
+        loader = js.document.getElementById("pyscript_loading")
+        if loader:
+            loader.style.display = "none"
+
+        def python_calculate_equity(hand_str, board_str):
+            """
+            Fonction appelée par JS.
+            Reçoit des chaines (ex: "Ah,Ks", "Jd,Tc,2s")
+            Retourne le pourcentage d'équité.
+            """
+            try:
+                # Parsing des entrées JS
+                hand = hand_str.split(",") if hand_str else []
+                board = board_str.split(",") if board_str else []
+                
+                # Nettoyage des listes vides
+                hand = [c for c in hand if c]
+                board = [c for c in board if c]
+
+                # Validation basique
+                if len(hand) != 2:
+                    return "Erreur: 2 cartes requises"
+
+                # Appel du vrai moteur (Réduit simu à 1000 pour la vitesse web)
+                equity_val = poker_engine.equity(hand, board, 1000)
+                
+                # Retour formaté (ex: 42.5)
+                return round(equity_val * 100, 2)
+            except Exception as e:
+                return f"Err: {str(e)}"
+
+        # Exposer la fonction à JavaScript
+        window.calculate_equity_bridge = python_calculate_equity
+    </script>
+
+    <!-- UI: Loader -->
+    <div id="pyscript_loading">
+        <i class="fa-solid fa-circle-notch fa-spin text-blue-500"></i>
+        Initialisation du moteur Python...
+    </div>
 
     <!-- Header -->
     <header class="bg-slate-900/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
@@ -77,9 +127,8 @@
                 <h1 class="text-xl font-bold tracking-tight">Poker<span class="text-slate-400 font-normal">Engine</span></h1>
             </div>
             <nav class="hidden md:flex gap-6 text-sm font-medium">
-                <a href="#demo" class="hover:text-red-400 transition-colors">Interface</a>
+                <a href="#demo" class="hover:text-red-400 transition-colors">Simulation Live</a>
                 <a href="#algo" class="hover:text-red-400 transition-colors">Algorithme</a>
-                <a href="#code" class="hover:text-red-400 transition-colors">Code Source</a>
             </nav>
             <a href="https://github.com/ZiKorT/Poker-Engine" target="_blank" class="text-slate-400 hover:text-white transition-colors">
                 <i class="fa-brands fa-github text-xl"></i>
@@ -87,274 +136,168 @@
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 py-8 space-y-20">
+    <main class="flex-grow container mx-auto px-4 py-8 space-y-16">
 
-        <!-- Hero Section -->
+        <!-- Hero -->
         <section class="text-center max-w-3xl mx-auto pt-8">
-            <div class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-red-400 uppercase bg-red-900/10 rounded-full border border-red-900/30">
-                Monte Carlo Simulation
+            <div class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-green-400 uppercase bg-green-900/10 rounded-full border border-green-900/30">
+                <i class="fa-brands fa-python"></i> Powered by Python (PyScript)
             </div>
-            <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
+            <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6">
                 Calculateur d'Équité <br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Texas Hold'em</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Real-Time</span>
             </h2>
-            <p class="text-lg text-slate-400 mb-8">
-                Un moteur d'évaluation de mains ultra-rapide écrit en Python. 
-                Utilise des opérations binaires (Bitmasks) et des nombres premiers pour calculer vos chances de victoire.
+            <p class="text-lg text-slate-400">
+                Ce site exécute véritablement le code <code>poker_engine.py</code> dans votre navigateur.
+                Sélectionnez vos cartes ci-dessous pour lancer une simulation Monte Carlo.
             </p>
         </section>
 
-        <!-- Interactive Demo (Visual Mockup) -->
+        <!-- Interactive Demo -->
         <section id="demo" class="bg-slate-800 rounded-2xl border border-slate-700 p-1 shadow-2xl overflow-hidden relative">
-            
-            <!-- Badge "Mockup" pour être honnête -->
-            <div class="absolute top-4 right-4 z-20">
-                <span class="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase rounded-full backdrop-blur">
-                    Interface Demo
-                </span>
-            </div>
-
             <div class="bg-[#1a3c28] rounded-xl p-8 relative min-h-[400px] flex flex-col items-center justify-center border border-[#2d5a3f]">
-                <!-- Tapis Vert Texture -->
                 <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
 
-                <!-- Main du Joueur -->
+                <!-- Hand -->
                 <div class="z-10 mb-8 text-center">
                     <h3 class="text-green-100/50 text-xs font-bold uppercase tracking-widest mb-3">Votre Main</h3>
                     <div class="flex gap-4 justify-center">
-                        <div class="poker-card" id="card-h1" onclick="selectCard('h1')">
-                            <div class="text-lg suit-red">A♥</div>
-                            <div class="self-end text-lg suit-red">♥</div>
+                        <div class="poker-card" id="card-h1" onclick="selectCard('h1')" data-val="Ah">
+                            <div class="text-lg suit-red">A♥</div><div class="self-end text-lg suit-red">♥</div>
                         </div>
-                        <div class="poker-card" id="card-h2" onclick="selectCard('h2')">
-                            <div class="text-lg suit-black">K♠</div>
-                            <div class="self-end text-lg suit-black">♠</div>
+                        <div class="poker-card" id="card-h2" onclick="selectCard('h2')" data-val="Ks">
+                            <div class="text-lg suit-black">K♠</div><div class="self-end text-lg suit-black">♠</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Board (Flop/Turn/River) -->
+                <!-- Board -->
                 <div class="z-10 mb-10 text-center">
-                    <h3 class="text-green-100/50 text-xs font-bold uppercase tracking-widest mb-3">Le Board</h3>
+                    <h3 class="text-green-100/50 text-xs font-bold uppercase tracking-widest mb-3">Le Board (Flop / Turn / River)</h3>
                     <div class="flex gap-3 justify-center flex-wrap">
-                        <div class="poker-card" id="card-b1" onclick="selectCard('b1')">
-                            <div class="text-lg suit-red">J♦</div>
-                            <div class="self-end text-lg suit-red">♦</div>
+                        <div class="poker-card" id="card-b1" onclick="selectCard('b1')" data-val="Jd">
+                            <div class="text-lg suit-red">J♦</div><div class="self-end text-lg suit-red">♦</div>
                         </div>
-                        <div class="poker-card" id="card-b2" onclick="selectCard('b2')">
-                            <div class="text-lg suit-black">10♣</div>
-                            <div class="self-end text-lg suit-black">♣</div>
+                        <div class="poker-card" id="card-b2" onclick="selectCard('b2')" data-val="Tc">
+                            <div class="text-lg suit-black">10♣</div><div class="self-end text-lg suit-black">♣</div>
                         </div>
-                        <div class="poker-card" id="card-b3" onclick="selectCard('b3')">
-                            <div class="text-lg suit-red">10♥</div>
-                            <div class="self-end text-lg suit-red">♥</div>
+                        <div class="poker-card" id="card-b3" onclick="selectCard('b3')" data-val="Th">
+                            <div class="text-lg suit-red">10♥</div><div class="self-end text-lg suit-red">♥</div>
                         </div>
-                        <div class="poker-card empty" id="card-b4" onclick="selectCard('b4')">
+                        <div class="poker-card empty" id="card-b4" onclick="selectCard('b4')" data-val="">
                             <span>Turn</span>
                         </div>
-                        <div class="poker-card empty" id="card-b5" onclick="selectCard('b5')">
+                        <div class="poker-card empty" id="card-b5" onclick="selectCard('b5')" data-val="">
                             <span>River</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Action Bar -->
+                <!-- Action -->
                 <div class="z-10 flex flex-col items-center gap-4">
-                    <button onclick="simulateCalculation()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-medium py-2 px-6 rounded-full shadow-lg transition-all flex items-center gap-2 text-sm">
-                        <i class="fa-solid fa-play"></i> Simuler l'interface
+                    <button onclick="runRealSimulation()" id="calc-btn" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-calculator"></i> Calculer (Python)
                     </button>
                     
                     <div id="result-area" class="hidden text-center">
-                        <div class="text-xs text-yellow-400/80 mb-1 uppercase tracking-wide font-bold">Résultat Simulé</div>
-                        <div class="text-4xl font-black text-white drop-shadow-lg" id="equity-val">67.0</div>
-                        <div class="text-[10px] text-slate-400 mt-2 font-mono">Backend Python non connecté (Page Statique)</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Note explicative HONNÊTE -->
-            <div class="bg-slate-900/90 px-6 py-4 text-xs text-slate-400 text-center border-t border-slate-700 flex items-center justify-center gap-3">
-                <i class="fa-solid fa-info-circle text-blue-400 text-lg"></i>
-                <p class="text-left">
-                    Cette section est une <strong>démonstration UX/UI</strong>. Le véritable moteur de calcul (Backend Python) nécessite un serveur pour traiter les millions de combinaisons (fichier CSV de 1Mo). 
-                    Le code source ci-dessous montre la logique réelle. <strong>Les résultats affichés ne seront pas corrects</strong>
-                </p>
-            </div>
-        </section>
-
-        <!-- Section Architecture -->
-        <section id="algo" class="space-y-12">
-            <div class="text-center max-w-2xl mx-auto">
-                <h2 class="text-3xl font-bold text-white mb-4">Architecture & Optimisation</h2>
-                <div class="h-1 w-20 bg-red-500 mx-auto rounded mb-6"></div>
-                <p class="text-slate-400">
-                    L'évaluation d'une main de poker à 7 cartes est complexe (133 millions de combinaisons). 
-                    Pour atteindre une vitesse de calcul temps-réel, ce projet utilise plusieurs techniques d'ingénierie logicielle.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Card 1: Bitmasking -->
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-500/50 transition-colors">
-                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-red-500 text-xl font-mono border border-slate-700">
-                        0b101
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Représentation Binaire</h3>
-                    <p class="text-slate-400 text-sm mb-4">
-                        Chaque carte est un entier de 32 bits. Cela permet d'extraire la couleur, la valeur et le nombre premier associé en une seule opération bit-à-bit (`&`, `|`, `>>`).
-                    </p>
-                    <div class="code-block text-[10px]">
-                        <span class="py-comment"># Format binaire d'une carte</span><br>
-                        rank_mask = (<span class="py-num">1</span> &lt;&lt; i) &lt;&lt; <span class="py-num">16</span><br>
-                        suit_val = (<span class="py-num">1</span> &lt;&lt; j) &lt;&lt; <span class="py-num">12</span><br>
-                        card_int = prime | rank | suit
-                    </div>
-                </div>
-
-                <!-- Card 2: Prime Numbers -->
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-yellow-500/50 transition-colors">
-                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-yellow-500 text-xl border border-slate-700">
-                        <i class="fa-solid fa-superscript"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Produit de Nombres Premiers</h3>
-                    <p class="text-slate-400 text-sm mb-4">
-                        Chaque rang (2, 3... As) est associé à un nombre premier. En multipliant les premiers des cartes d'une main, on obtient un produit unique qui identifie la main sans tenir compte de l'ordre.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-1 list-disc list-inside">
-                        <li>2 = 2, 3 = 3 ... As = 41</li>
-                        <li>Multiplication indépendante de l'ordre</li>
-                        <li>Identification unique des mains non-flush</li>
-                    </ul>
-                </div>
-
-                <!-- Card 3: Lookup Tables -->
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500/50 transition-colors">
-                    <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mb-4 text-blue-500 text-xl border border-slate-700">
-                        <i class="fa-solid fa-table"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Table de Lookup (CSV)</h3>
-                    <p class="text-slate-400 text-sm mb-4">
-                        Plutôt que de recalculer la force de chaque main à chaque fois, le programme pré-charge un fichier <code>Flushes.csv</code> contenant toutes les combinaisons uniques.
-                    </p>
-                    <div class="code-block text-[10px]">
-                        <span class="py-comment"># O(1) Access Time</span><br>
-                        score = Flushes[<span class="py-string">"2567"</span>] <span class="py-comment"># Exemple</span><br>
-                        <span class="py-keyword">if</span> score < best_score: ...
+                        <div class="text-sm text-green-200 mb-1">Win Rate (vs 2 random)</div>
+                        <div class="text-4xl font-black text-white drop-shadow-lg" id="equity-val">--%</div>
+                        <div class="text-xs text-green-400 mt-2 font-mono"><i class="fa-solid fa-bolt"></i> Calculé par poker_engine.py</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section Code Snippets -->
-        <section id="code" class="grid lg:grid-cols-2 gap-8">
-            <div class="space-y-4">
-                <div class="flex items-center gap-2 text-slate-300 mb-2">
-                    <i class="fa-brands fa-python"></i>
-                    <h3 class="font-bold">Calcul d'Équité (Monte Carlo)</h3>
-                </div>
-                <div class="code-block text-xs h-full">
-                    <div class="text-slate-500 text-[10px] uppercase font-bold mb-2">Extrait: poker_engine.py</div>
-<pre><span class="py-keyword">def</span> <span class="py-func">equity</span>(hand, board, nb_simulation):
-    <span class="py-comment"># Convertit les cartes en entiers optimisés</span>
-    hand_int = [DECK_INT[c] <span class="py-keyword">for</span> c <span class="py-keyword">in</span> hand]
-    board_int = [DECK_INT[c] <span class="py-keyword">for</span> c <span class="py-keyword">in</span> board]
-    
-    <span class="py-comment"># Simulation de N parties</span>
-    <span class="py-keyword">for</span> _ <span class="py-keyword">in</span> <span class="py-func">range</span>(nb_simulation):
-        <span class="py-comment"># Tirage aléatoire des cartes manquantes</span>
-        draw = random.<span class="py-func">sample</span>(deck_int, cards_to_draw)
-        
-        <span class="py-comment"># Évaluation des mains</span>
-        my_score = <span class="py-func">evaluate7</span>(hand_int + current_board)
-        opp_score = <span class="py-func">evaluate7</span>(opp_hand + current_board)
-        
-        <span class="py-keyword">if</span> my_score < opp_score:
-            wins += <span class="py-num">1</span>
-            
-    <span class="py-keyword">return</span> wins / nb_simulation</pre>
-                </div>
+        <!-- Architecture Info -->
+        <section id="algo" class="grid md:grid-cols-3 gap-6">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-white font-bold mb-2">Bitmasking</h3>
+                <p class="text-sm text-slate-400">Représentation binaire des cartes pour une évaluation en O(1).</p>
             </div>
-
-            <div class="space-y-4">
-                <div class="flex items-center gap-2 text-slate-300 mb-2">
-                    <i class="fa-solid fa-terminal"></i>
-                    <h3 class="font-bold">Interface Console (CLI)</h3>
-                </div>
-                <div class="bg-slate-900 rounded-lg border border-slate-700 p-4 font-mono text-xs text-slate-300 h-full flex flex-col justify-center shadow-inner">
-                    <div class="mb-2"><span class="text-green-400">user@portfolio:~$</span> python3 main.py</div>
-                    <div class="pl-2 border-l-2 border-slate-700 space-y-1">
-                        <div>--- Calculateur d'Équité Poker ---</div>
-                        <div>Entrez votre première carte : <span class="text-white font-bold">As</span></div>
-                        <div>Entrez votre deuxième carte : <span class="text-white font-bold">Kd</span></div>
-                        <div><span class="text-blue-400">Calcul de l'équité pré-flop...</span></div>
-                        <div>Votre équité avec le board ['As', 'Kd'] est de <span class="text-yellow-400 font-bold">48%</span></div>
-                        <div>--- FLOP ---</div>
-                        <div>Entrez la première carte du flop : <span class="text-white font-bold">Jd</span></div>
-                        <div>Entrez la deuxième carte du flop : <span class="text-white font-bold">8h</span></div>
-                        <div>Entrez la troisième carte flop : <span class="text-white font-bold">9c</span></div>
-                        <div><span class="text-blue-400">Calcul de l'équité post-flop...</span></div>
-                        <div>Votre équité avec le board ['Jd', '8h', '9c'] est de <span class="text-yellow-400 font-bold">28,14%</span></div>
-                    </div>
-                </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-white font-bold mb-2">Primes Product</h3>
+                <p class="text-sm text-slate-400">Multiplication de nombres premiers pour identifier les mains uniques.</p>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-white font-bold mb-2">Lookup Tables</h3>
+                <p class="text-sm text-slate-400">Le fichier <code>Flushes.csv</code> est chargé dynamiquement pour pré-calculer les forces.</p>
             </div>
         </section>
 
     </main>
 
-    <footer class="border-t border-slate-800 bg-slate-900 py-8 mt-auto">
-        <div class="container mx-auto px-4 text-center text-slate-500 text-sm">
-            <p>&copy; 2025 Poker Engine Project. Développé par <span class="text-slate-300">Elliot C.</span></p>
-        </div>
-    </footer>
-
-    <!-- Script pour la démo visuelle -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         const suits = [
-            { char: '♥', color: 'suit-red' },
-            { char: '♠', color: 'suit-black' },
-            { char: '♦', color: 'suit-red' },
-            { char: '♣', color: 'suit-black' }
+            { char: '♥', color: 'suit-red', code: 'h' },
+            { char: '♠', color: 'suit-black', code: 's' },
+            { char: '♦', color: 'suit-red', code: 'd' },
+            { char: '♣', color: 'suit-black', code: 'c' }
         ];
 
+        // Change la carte visuellement et met à jour l'attribut data-val
         function selectCard(id) {
-            const el = document.getElementById(`card-${id}`);
-            
-            // Génère une carte aléatoire pour la maquette
+            const el = document.getElementById(id);
             const r = ranks[Math.floor(Math.random() * ranks.length)];
             const s = suits[Math.floor(Math.random() * suits.length)];
             
+            // UI Update
             el.className = 'poker-card'; 
             el.innerHTML = `
                 <div class="text-lg ${s.color}">${r}${s.char}</div>
                 <div class="self-end text-lg ${s.color}">${s.char}</div>
             `;
             
+            // Stocke la valeur pour Python (ex: "Ah", "Ks")
+            el.dataset.val = r + s.code;
+            
             document.getElementById('result-area').classList.add('hidden');
         }
 
-        function simulateCalculation() {
-            const btn = document.querySelector('button');
+        async function runRealSimulation() {
+            const btn = document.getElementById('calc-btn');
             const resultArea = document.getElementById('result-area');
             const equityVal = document.getElementById('equity-val');
+
+            // Vérifie si Python est prêt
+            if (!window.calculate_equity_bridge) {
+                alert("Le moteur Python démarre... Attendez quelques secondes.");
+                return;
+            }
+
+            // Récupération des cartes depuis le DOM
+            const h1 = document.getElementById('card-h1').dataset.val;
+            const h2 = document.getElementById('card-h2').dataset.val;
             
-            // État de chargement simulé
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Simulation...';
+            // Board cards (seulement celles qui ne sont pas vides)
+            const boardIds = ['card-b1', 'card-b2', 'card-b3', 'card-b4', 'card-b5'];
+            let boardCards = [];
+            boardIds.forEach(id => {
+                const val = document.getElementById(id).dataset.val;
+                if(val) boardCards.push(val);
+            });
+
+            // UI Loading
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Calcul en cours...';
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             resultArea.classList.add('hidden');
 
+            // Appel Python via le pont (petit délai pour laisser l'UI s'afficher)
             setTimeout(() => {
-                // Simulation d'un résultat
-                const randomEquity = (Math.random() * (80 - 20) + 20).toFixed(1);
-                
-                equityVal.innerText = randomEquity + '%';
+                const handStr = [h1, h2].join(",");
+                const boardStr = boardCards.join(",");
+
+                // APPEL RÉEL À LA FONCTION PYTHON DÉFINIE PLUS HAUT
+                const result = window.calculate_equity_bridge(handStr, boardStr);
+
+                // Affichage
+                equityVal.innerText = result + '%';
                 resultArea.classList.remove('hidden');
-                
-                // Reset button
-                btn.innerHTML = originalContent;
+                btn.innerHTML = originalText;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
-            }, 800);
+            }, 100);
         }
     </script>
 </body>
